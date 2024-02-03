@@ -6,9 +6,9 @@ import {
 } from "react-router-dom";
 
 import { RedirectToSignIn, SignedIn, SignedOut } from "@clerk/clerk-react";
+import NavBar from './components/Navbar';
 import Dashboard from "./pages/Dashboard.jsx";
 import Home from "./pages/Home.jsx";
-
 
 
 const router = createBrowserRouter(
@@ -31,6 +31,7 @@ const router = createBrowserRouter(
 function App() {
   return (
     <>
+      <NavBar />
       <RouterProvider router={router} />
     </>
   )

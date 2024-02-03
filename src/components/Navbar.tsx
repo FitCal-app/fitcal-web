@@ -4,8 +4,8 @@ import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Button } from "@material-tailwind/react";
 
 const navigation = [
-  { name: 'Dashboard', href: '#', current: true },
-  { name: 'Home', href: '/', current: false },
+  { name: 'Home', href: '/' },
+  { name: 'Dashboard', href: '/dashboard' },
 ]
 
 function classNames(...classes) {
