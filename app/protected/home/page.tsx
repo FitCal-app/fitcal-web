@@ -6,7 +6,7 @@ export default async function Page() {
   return (
     <section className='py-24'>
       <div className='container'>
-        <h1 className='text-3xl font-bold'>This is a server-side page</h1>
+        <h1 className='text-3xl font-bold'>Welcome {user?.firstName}</h1>
         <p className='mt-4'>You are logged in as {user?.firstName}</p>
       </div>
     </section>

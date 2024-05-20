@@ -11,22 +11,24 @@ export default function Header() {
   return (
     <header className='py-4'>
       <nav className='container flex items-center justify-between'>
-        <Image
-          src={logo}
-          width={50}
-          height={50}
-          alt="Picture of the author"
-        />
+        <Link href='/'>
+          <Image
+            src={logo}
+            width={50}
+            height={50}
+            alt="Picture of the author"
+          />
+        </Link>
         
         <ul className='flex gap-10 text-sm font-medium'>
           <li>
-            <Link href='/'>Home</Link>
-          </li>
-          <li>
-            <Link href='/protected/server'>Protected (server)</Link>
+            <Link href='/protected/home'>Personal Homepage</Link>
           </li>
           <li>
             <Link href='/protected/client'>Protected (client)</Link>
+          </li>
+          <li>
+            <Link href='/protected/settings'>Settings</Link>
           </li>
           <li>
             <Link href='/api/me'>Who am I?</Link>
