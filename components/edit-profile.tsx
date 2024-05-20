@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 
 
 interface FormProps {
@@ -57,8 +58,8 @@ const FormComponent: React.FC<FormProps> = ({ userId }) => {
   return (
     <>
       <form onSubmit={handleSubmit}>
-        <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email" />
-        {/* Add more form fields as needed */}
+        <Input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email" />
+
         <Button type="submit">Submit</Button>
       </form>
     </>
