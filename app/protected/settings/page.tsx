@@ -1,10 +1,6 @@
-import { currentUser } from '@clerk/nextjs/server'
 import { auth } from '@clerk/nextjs/server'
 
 import EditProfile from '@/components/edit-profile'
-
-
-import { z } from "zod"
 
 
 export default async function Page() {

@@ -1,101 +1,68 @@
 "use client"
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
-interface Needs {
-  calories: number;
-  carbohydrates: number;
-  proteins: number;
-  fats: number;
-}
+import { Button } from "@/components/ui/button"
 
-interface Meal {
-  // Define the meal schema properties
-  // Example:
-  name: string;
-  calories: number;
-}
 
-interface User {
-  clerkUserId: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  image: string;
-  gender: string;
-  height: number;
-  weight: number;
-  needs: Needs;
-  history: Meal[];
-  personal_products: any[];
-}
-
-interface EditProfileProps {
+interface FormProps {
   userId: string;
 }
 
-const EditProfile: React.FC<EditProfileProps> = ({ userId }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+const FormComponent: React.FC<FormProps> = ({ userId }) => {
+  const [formData, setFormData] = useState({
+    // Define your form fields
+    email: '',
+    // Add more fields as needed
+  });
 
-  useEffect(() => {
-    if (!userId) return;
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
 
-    const fetchUser = async () => {
-      try {
-        const res = await fetch(`http://localhost:5173/api/users/clerk/${userId}`);
-        if (!res.ok) throw new Error('Network response was not ok');
-        const data: User = await res.json();
-        setUser(data);
-        setLoading(false);
-      } catch (error) {
-        setError(error instanceof Error ? error.message : 'An unknown error occurred');
-        setLoading(false);
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+  
+    try {
+      console.log( JSON.stringify(formData))
+      const response = await fetch(`http://localhost:5173/api/users/clerk/${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+  
+      if (response.ok) {
+        // Handle success
+        console.log('Data sent successfully');
+      } else {
+        // Handle non-success status codes
+        console.error('Failed to send data. Status:', response.status);
+        // Log response body if available
+        const responseBody = await response.json();
+        console.error('Response Body:', responseBody);
       }
-    };
-
-    fetchUser();
-  }, [userId]);
-
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
-  if (!user) return <div>No user found</div>;
+    } catch (error) {
+      // Handle network errors or other exceptions
+      console.error('Error sending data:', error);
+    }
+  };
+  
 
   return (
-    <div>
-      <h1>User Details</h1>
-      <ul>
-        <li><strong>Clerk User ID:</strong> {user.clerkUserId}</li>
-        <li><strong>Email:</strong> {user.email}</li>
-        <li><strong>First Name:</strong> {user.firstName}</li>
-        <li><strong>Last Name:</strong> {user.lastName}</li>
-        <li><strong>Image:</strong> <img src={user.image} alt={`${user.firstName} ${user.lastName}`} /></li>
-        <li><strong>Gender:</strong> {user.gender}</li>
-        <li><strong>Height:</strong> {user.height}</li>
-        <li><strong>Weight:</strong> {user.weight}</li>
-        <li><strong>Needs:</strong></li>
-        <ul>
-          <li><strong>Calories:</strong> {user.needs.calories}</li>
-          <li><strong>Carbohydrates:</strong> {user.needs.carbohydrates}</li>
-          <li><strong>Proteins:</strong> {user.needs.proteins}</li>
-          <li><strong>Fats:</strong> {user.needs.fats}</li>
-        </ul>
-        <li><strong>History:</strong></li>
-        <ul>
-          {user.history.map((meal, index) => (
-            <li key={index}>{JSON.stringify(meal)}</li>
-          ))}
-        </ul>
-        <li><strong>Personal Products:</strong></li>
-        <ul>
-          {user.personal_products.map((product, index) => (
-            <li key={index}>{JSON.stringify(product)}</li>
-          ))}
-        </ul>
-      </ul>
-    </div>
+    <>
+      <form onSubmit={handleSubmit}>
+        <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email" />
+        {/* Add more form fields as needed */}
+        <Button type="submit">Submit</Button>
+      </form>
+    </>
   );
 };
 
-export default EditProfile;
+export default FormComponent;
