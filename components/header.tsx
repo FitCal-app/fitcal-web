@@ -28,7 +28,7 @@ export default function Header() {
             <Link href='/protected/client'>Protected (client)</Link>
           </li>
           <li>
-            <Link href='/protected/settings'>Settings</Link>
+            <Link href='/protected/tdee-calculator'>TDEE Calculator</Link>
           </li>
           <li>
             <Link href='/api/me'>Who am I?</Link>
