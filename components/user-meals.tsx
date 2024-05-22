@@ -47,6 +47,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
+import { Progress } from "@/components/ui/progress";
 
 import {Trash2} from 'lucide-react' 
 
@@ -137,7 +138,7 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                   const servingSize = food.grams / 100;
   
                   totalCalories += Math.round(
-                    (nutriments.energy_value || 0) * servingSize
+                    ((nutriments.energy_value * 0.239) * servingSize)
                   );
                   totalCarbs += Math.round(
                     (nutriments.carbohydrates || 0) * servingSize
@@ -181,38 +182,38 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
 
         try {
             const response = await fetch(
-            `${apiKey}/api/meals/clerk/${userId}/foods/date/${formattedDate}`,
-            {
-                method: "POST",
-                headers: {
-                "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                mealType,
-                food: { grams: parseInt(grams, 10), barcode },
-                }),
-            }
+                `${apiKey}/api/meals/clerk/${userId}/foods/date/${formattedDate}`,
+                    {
+                        method: "POST",
+                        headers: {
+                        "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                        mealType,
+                        food: { grams: parseInt(grams, 10), barcode },
+                        }),
+                    }
             );
 
             if (response.ok) {
-            const updatedMeals = await response.json();
+                const updatedMeals = await response.json();
 
-            // Update meals state IMMEDIATELY
-            setMeals((prevMeals) => {
-                const newMeals = { ...prevMeals }; 
-                if (prevMeals && prevMeals[mealType]) { // Check if the meal type exists before adding
-                    newMeals[mealType] = [...prevMeals[mealType], { grams, barcode }];
-                } else {
-                    newMeals[mealType] = [{ grams, barcode }];
-                }
+                // Update meals state IMMEDIATELY
+                setMeals((prevMeals) => {
+                    const newMeals = { ...prevMeals }; 
+                    if (prevMeals && prevMeals[mealType]) { // Check if the meal type exists before adding
+                        newMeals[mealType] = [...prevMeals[mealType], { grams, barcode }];
+                    } else {
+                        newMeals[mealType] = [{ grams, barcode }];
+                    }
 
-                return newMeals;
-            });
+                    return newMeals;
+                });
 
-            toast({ title: "Food item added successfully!" });
-            calculateTotals(); // Recalculate totals
+                toast({ title: "Food item added successfully!" });
+                calculateTotals(); // Recalculate totals
             } else {
-            throw new Error("Failed to add food item.");
+                throw new Error("Failed to add food item.");
             }
         } catch (error) {
             console.error(error);
@@ -275,6 +276,46 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
     return (
         <>
             <div className="container mx-auto mt-8">
+                {meals && (
+                    <Card className="mb-4 shadow-md rounded-lg overflow-hidden">
+                    <CardHeader className="bg-gradient-to-r from-green-400 to-blue-500 text-white p-4">
+                        <CardTitle className="text-lg font-bold">
+                        Total Nutrition
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-2 gap-4">
+                        <div>
+                        <p className="text-lg font-semibold">Calories</p>
+                        <Progress value={(totalNutrients.calories / 2000) * 100} /> {/* Assuming 2000 kcal goal */}
+                        <p className="text-sm text-muted-foreground mt-2">
+                            {totalNutrients.calories} kcal
+                        </p>
+                        </div>
+                        <div>
+                        <p className="text-lg font-semibold">Carbs</p>
+                        <Progress value={(totalNutrients.carbs / 200) * 100} /> {/* Assuming 200g carbs goal */}
+                        <p className="text-sm text-muted-foreground mt-2">
+                            {totalNutrients.carbs}g
+                        </p>
+                        </div>
+                        <div>
+                        <p className="text-lg font-semibold">Protein</p>
+                        <Progress value={(totalNutrients.protein / 150) * 100} /> {/* Assuming 150g protein goal */}
+                        <p className="text-sm text-muted-foreground mt-2">
+                            {totalNutrients.protein}g
+                        </p>
+                        </div>
+                        <div>
+                        <p className="text-lg font-semibold">Fat</p>
+                        <Progress value={(totalNutrients.fat / 70) * 100} /> {/* Assuming 70g fat goal */}
+                        <p className="text-sm text-muted-foreground mt-2">
+                            {totalNutrients.fat}g
+                        </p>
+                        </div>
+                    </CardContent>
+                    </Card>
+                )}
+
                 <div className="flex justify-between items-center mb-4">
                     <Popover>
                         <PopoverTrigger asChild>
@@ -300,63 +341,62 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                     </Popover>
 
                     <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                    <AlertDialogTrigger asChild>
-                        <Button>Add Food</Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                        <AlertDialogTitle>Add Food to Meal</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            <div className="space-y-4 mt-4">
-                            <div>
-                                <Label htmlFor="mealType">Meal Type</Label>
-                                <Select
-                                    id="mealType"
-                                    value={mealType}
-                                    onValueChange={setMealType}
-                                >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a meal type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {mealTypesToDisplay.map((type) => (
-                                    <SelectItem key={type} value={type}>
-                                        {type.charAt(0).toUpperCase() + type.slice(1)}
-                                    </SelectItem>
-                                    ))}
-                                </SelectContent>
-                                </Select>
-                            </div>
-                            <div>
-                                <Label htmlFor="grams">Grams</Label>
-                                <Input 
-                                id="grams" 
-                                type="number" 
-                                value={grams} 
-                                onChange={(e) => setGrams(e.target.value)} 
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="barcode">Barcode</Label>
-                                <Input 
-                                id="barcode" 
-                                value={barcode} 
-                                onChange={(e) => setBarcode(e.target.value)} 
-                                />
-                            </div>
-                            </div>
-                        </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleSubmit}>
-                            Add Item
-                        </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
+                        <AlertDialogTrigger asChild>
+                            <Button>Add Food</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Add Food to Meal</AlertDialogTitle>
+                                <div className="space-y-4 mt-4">
+                                    <div className="space-y-4 mt-4">
+                                    <div>
+                                        <Label htmlFor="mealType">Meal Type</Label>
+                                        <Select
+                                            id="mealType"
+                                            value={mealType}
+                                            onValueChange={setMealType}
+                                        >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select a meal type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {mealTypesToDisplay.map((type) => (
+                                            <SelectItem key={type} value={type}>
+                                                {type.charAt(0).toUpperCase() + type.slice(1)}
+                                            </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="grams">Grams</Label>
+                                        <Input 
+                                        id="grams" 
+                                        type="number" 
+                                        value={grams} 
+                                        onChange={(e) => setGrams(e.target.value)} 
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="barcode">Barcode</Label>
+                                        <Input 
+                                        id="barcode" 
+                                        value={barcode} 
+                                        onChange={(e) => setBarcode(e.target.value)} 
+                                        />
+                                    </div>
+                                    </div>
+                                </div>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleSubmit}>
+                                    Add Item
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
                     </AlertDialog>
                 </div>
-
 
                 {loading ? (
                     <p>Loading meals...</p>
@@ -364,12 +404,6 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                     <p className="text-destructive">Error: {error.message}</p>
                 ) : meals ? (
                     <>
-                        <p className="text-lg">Calories: {totalNutrients.calories} kcal</p>
-                        <p className="text-lg">Carbs: {totalNutrients.carbs}g</p>
-                        <p className="text-lg">Protein: {totalNutrients.protein}g</p>
-                        <p className="text-lg">Fat: {totalNutrients.fat}g</p>
-
-
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {mealTypesToDisplay.map((mealType) => (
                                 <Card
@@ -387,34 +421,36 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                                         <TableRow>
                                             <TableHead className="font-normal">Name</TableHead>
                                             <TableHead className="font-normal">Grams</TableHead>
-                                            <TableHead className="font-normal text-right">Delete</TableHead> {/* Added Delete Header */}
+                                            <TableHead className="font-normal text-right"></TableHead> {/* Added Delete Header */}
                                         </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                        {/* Render food items or "No items added yet" message */}
-                                        {(meals && meals[mealType] && meals[mealType].length > 0) ? (
+                                            {meals[mealType] && meals[mealType].length > 0 ? (
                                             meals[mealType].map((food, index) => (
-                                            <TableRow key={`${mealType}-${index}`}>
-                                                <TableCell className="font-medium">Example Food name</TableCell>
-                                                <TableCell>{food.grams}g</TableCell>
-                                                <TableCell className="text-right"> {/* Added Delete Icon */}
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => handleDeleteFoodItem(meals._id, index, mealType)}
+                                                <TableRow key={`${mealType}-${index}`}>
+                                                    <TableCell className="font-medium">Example Food name</TableCell>
+                                                    <TableCell>{food.grams}g</TableCell>
+                                                    <TableCell className="text-right">
+                                                        <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleDeleteFoodItem(meals._id, index, mealType)}
+                                                        >
+                                                        <Trash2 className="h-4 w-4 text-red-500" />
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                            ) : (
+                                            <TableRow>
+                                                <TableCell
+                                                colSpan={3}
+                                                className="text-muted-foreground text-center"
                                                 >
-                                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                                </Button>
+                                                No {mealType} items added yet.
                                                 </TableCell>
                                             </TableRow>
-                                            ))
-                                        ) : (
-                                            <TableRow>
-                                            <TableCell colSpan={3} className="text-muted-foreground text-center">
-                                                No {mealType} items added yet.
-                                            </TableCell>
-                                            </TableRow>
-                                        )}
+                                            )}
                                         </TableBody>
                                     </Table>
                                 </Card>
