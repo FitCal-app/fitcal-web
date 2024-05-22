@@ -23,6 +23,18 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"  
+
 
 const apiKey = process.env.NEXT_PUBLIC_API_URL;
 
@@ -50,6 +62,7 @@ const TdeeCalculator: React.FC<FormProps> = ({ userId }) => {
     const [macros, setMacros] = useState<{ carbs: number, protein: number, fat: number } | null>(null);
     const [isDataSent, setIsDataSent] = useState<boolean>(false);
     const [errorMessage, setErrorMessage] = useState<string>('');
+    const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
 
     useEffect(() => {
         if (errorMessage || isDataSent) {
@@ -144,6 +157,7 @@ const TdeeCalculator: React.FC<FormProps> = ({ userId }) => {
                 console.log('Data sent successfully');
                 setIsDataSent(true);
                 setErrorMessage('');
+                setIsDialogOpen(false);  // Close the dialog on successful submission
 
                 // Fetch user data after updating needs
                 const userResponse = await fetch(`${apiKey}/api/users/clerk/${userId}`);
@@ -176,23 +190,25 @@ const TdeeCalculator: React.FC<FormProps> = ({ userId }) => {
         }
     };
 
+    const isFormFilled = Object.values(formData).every(value => value !== '');
+
     return (
         <>
             {errorMessage && 
-                <Alert variant="destructive">
+                <Alert variant="destructive" className='mb-3'>
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Error</AlertTitle>
                     <AlertDescription>{errorMessage}</AlertDescription>
                 </Alert>
             }
             {isDataSent && 
-                <Alert>
+                <Alert className='mb-3'>
                     <Check className="h-4 w-4" />
-                    <AlertTitle>Data sent successfully!</AlertTitle>
+                    <AlertTitle className='text-green-500'>Data sent successfully!</AlertTitle>
                 </Alert>
             }
             
-            <div className='grid grid-cols-2 grid-rows-2 gap-5'>
+            <div className='grid grid-cols-2 grid-rows-1 gap-5'>
                 <div className="col-span-1">
                     {needs ? (
                         <Card>
@@ -226,14 +242,14 @@ const TdeeCalculator: React.FC<FormProps> = ({ userId }) => {
                     )}
                 </div>
 
-                <div className="col-start-2 row-span-2">
+                <div className="col-start-2">
                     <Card>
                         <CardHeader>
                             <CardTitle>TDEE Calculator</CardTitle>
                             <CardDescription>Calculate your TDEE</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <form onSubmit={handleSubmit}>
+                            <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
                                 <div className="grid grid-cols-1 xl:grid-cols-1 gap-4">
                                     <div className="w-full">
                                         <Label>Weight (kg)</Label>
@@ -280,40 +296,41 @@ const TdeeCalculator: React.FC<FormProps> = ({ userId }) => {
                                     </div>
 
                                     <div className="w-full mt-3">
-                                        <Button type="submit" className="w-full">Save to Profile</Button>
+                                        <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                                            <AlertDialogTrigger asChild>
+                                                <Button className='w-full' disabled={!isFormFilled}>Check preview</Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Data Preview</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        <div>
+                                                            <div>
+                                                                <strong>Calories:</strong> {calories} kcal
+                                                            </div>
+                                                            <div>
+                                                                <strong>Carbohydrates:</strong> {macros?.carbs} g
+                                                            </div>
+                                                            <div>
+                                                                <strong>Protein:</strong> {macros?.protein} g
+                                                            </div>
+                                                            <div>
+                                                                <strong>Fat:</strong> {macros?.fat} g
+                                                            </div>
+                                                        </div>
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <Button onClick={handleSubmit}>Save to Profile</Button>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     </div>
                                 </div>
                             </form>
                         </CardContent>
                     </Card>
-                </div>
-
-                <div className="col-end-2">
-                    {(calories !== null && macros !== null && !isDataSent) && (
-                        <>
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>⚠️ Preview</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div>
-                                        <div>
-                                            <strong>Calories:</strong> {calories} kcal
-                                        </div>
-                                        <div>
-                                            <strong>Carbohydrates:</strong> {macros?.carbs} g
-                                        </div>
-                                        <div>
-                                            <strong>Protein:</strong> {macros?.protein} g
-                                        </div>
-                                        <div>
-                                            <strong>Fat:</strong> {macros?.fat} g
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </>
-                    )}
                 </div>
             </div>
         </>
