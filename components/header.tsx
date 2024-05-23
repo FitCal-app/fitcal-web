@@ -5,7 +5,8 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 
-import logo from '../public/logo.svg'
+import logoLight from '../public/logo-light.svg';
+import logoDark from '../public/logo-dark.svg'; 
 
 export default function Header() {
   return (
@@ -13,7 +14,7 @@ export default function Header() {
       <nav className='container flex items-center justify-between'>
         <Link href='/'>
           <Image
-            src={logo}
+            src={logoDark}
             width={50}
             height={50}
             alt="Picture of the author"

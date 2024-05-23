@@ -29,7 +29,6 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
 
 
 import {
@@ -49,7 +48,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/components/ui/use-toast";
 import { Progress } from "@/components/ui/progress";
 
-import {Trash2} from 'lucide-react' 
+import { Trash2 } from 'lucide-react' 
 
 
 const apiKey = process.env.NEXT_PUBLIC_API_URL;
@@ -57,6 +56,13 @@ const apiKey = process.env.NEXT_PUBLIC_API_URL;
 interface FormProps {
     userId: string;
 }
+
+interface NeedsData {
+    calories: number;
+    carbohydrates: number;
+    proteins: number;
+    fats: number;
+}  
 
 const mealTypesToDisplay = ["breakfast", "snacks", "lunch", "dinner"];
 
@@ -78,7 +84,9 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
         protein: 0,
         fat: 0,
     });
-    
+
+    const [totalTargetNutrients, setTotalTargetNutrients] = useState<NeedsData | null>(null);
+
 
     const fetchMeals = useCallback(async () => {
         if (date) {
@@ -174,6 +182,26 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
     useEffect(() => {
         calculateTotals();
     }, [meals]);
+
+    useEffect(() => {
+        const fetchUserNeeds = async () => {
+            try {
+                const response = await fetch(`${apiKey}/api/users/clerk/${userId}`);
+                if (response.ok) {
+                    const userData = await response.json();
+                    if (userData.needs) {
+                        setTotalTargetNutrients(userData.needs);
+                    }
+                } else {
+                    console.error('Failed to fetch user data. Status:', response.status);
+                }
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+            }
+        };
+
+        fetchUserNeeds();
+    }, [userId]);
 
    
     const handleSubmit = async () => {
@@ -272,47 +300,44 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
     };
     
 
+    const isFormFilled = mealType !== '' && grams !== '' && barcode !== '';
 
     return (
         <>
             <div className="container mx-auto mt-8">
-                {meals && (
+                {totalTargetNutrients ? (
                     <Card className="mb-4 shadow-md rounded-lg overflow-hidden">
-                    <CardHeader className="bg-gradient-to-r from-green-400 to-blue-500 text-white p-4">
-                        <CardTitle className="text-lg font-bold">
-                        Total Nutrition
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-2 gap-4">
-                        <div>
-                        <p className="text-lg font-semibold">Calories</p>
-                        <Progress value={(totalNutrients.calories / 2000) * 100} /> {/* Assuming 2000 kcal goal */}
-                        <p className="text-sm text-muted-foreground mt-2">
-                            {totalNutrients.calories} kcal
-                        </p>
-                        </div>
-                        <div>
-                        <p className="text-lg font-semibold">Carbs</p>
-                        <Progress value={(totalNutrients.carbs / 200) * 100} /> {/* Assuming 200g carbs goal */}
-                        <p className="text-sm text-muted-foreground mt-2">
-                            {totalNutrients.carbs}g
-                        </p>
-                        </div>
-                        <div>
-                        <p className="text-lg font-semibold">Protein</p>
-                        <Progress value={(totalNutrients.protein / 150) * 100} /> {/* Assuming 150g protein goal */}
-                        <p className="text-sm text-muted-foreground mt-2">
-                            {totalNutrients.protein}g
-                        </p>
-                        </div>
-                        <div>
-                        <p className="text-lg font-semibold">Fat</p>
-                        <Progress value={(totalNutrients.fat / 70) * 100} /> {/* Assuming 70g fat goal */}
-                        <p className="text-sm text-muted-foreground mt-2">
-                            {totalNutrients.fat}g
-                        </p>
-                        </div>
-                    </CardContent>
+                        <CardHeader className="bg-gradient-to-r from-green-400 to-blue-500 text-white p-4">
+                            <CardTitle className="text-lg font-bold">Total Nutrition</CardTitle>
+                        </CardHeader>
+                
+                        <CardContent className="grid grid-cols-2 gap-4 mt-2">
+                        {[
+                            { name: "Calories", value: totalNutrients.calories, target: totalTargetNutrients?.calories, unit: "kcal" },
+                            { name: "Carbs", value: totalNutrients.carbs, target: totalTargetNutrients?.carbohydrates, unit: "g" },
+                            { name: "Protein", value: totalNutrients.protein, target: totalTargetNutrients?.proteins, unit: "g" },
+                            { name: "Fat", value: totalNutrients.fat, target: totalTargetNutrients?.fats, unit: "g" },
+                        ].map(({ name, value, target, unit }) => (
+                            <div key={name}>
+                                <p className="text-lg font-semibold">{name}</p>
+                                <Progress
+                                    value={(value / target) * 100}
+                                    className={cn(
+                                        value > target ? "bg-red-500 dark:bg-red-500" : "bg-white dark:bg-gray-700",
+                                        "[&>*]:bg-white" // Default white indicator
+                                    )}
+                                />
+                                <p className="text-sm text-muted-foreground mt-2">{value} / {target} {unit}</p>
+                            </div>
+                        ))}
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <Card className="mb-4 shadow-md rounded-lg overflow-hidden">
+                        <CardHeader>
+                            <CardTitle>No previous needs found</CardTitle>
+                            <CardDescription>Please calculate your first <a href='/protected/tdee-calculator' className="font-medium text-blue-600 underline dark:text-blue-500 hover:no-underline">TDEE</a> to see your daily progress</CardDescription>
+                        </CardHeader>
                     </Card>
                 )}
 
@@ -390,7 +415,7 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleSubmit}>
+                                <AlertDialogAction onClick={handleSubmit} disabled={!isFormFilled}>
                                     Add Item
                                 </AlertDialogAction>
                             </AlertDialogFooter>
