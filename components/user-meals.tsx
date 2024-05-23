@@ -64,6 +64,7 @@ interface NeedsData {
     fats: number;
 }  
 
+
 const mealTypesToDisplay = ["breakfast", "snacks", "lunch", "dinner"];
 
 const UserMeals: React.FC<FormProps> = ({ userId }) => {
@@ -133,9 +134,9 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
         let totalFat = 0;
   
         for (const mealType of mealTypesToDisplay) {
-          if (meals[mealType] && meals[mealType].length > 0) {
-            for (const food of meals[mealType]) {
-              try {
+            if (meals[mealType] && meals[mealType].length > 0) {
+              for (const food of meals[mealType]) {
+                try {
                 const response = await fetch(
                   `https://world.openfoodfacts.org/api/v0/product/${food.barcode}.json`
                 );
@@ -155,13 +156,15 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                     (nutriments.proteins || 0) * servingSize
                   );
                   totalFat += Math.round((nutriments.fat || 0) * servingSize);
+
+                  food.productName = data.product.product_name; 
+                  food.image = data.product.image_url;
                 }
               } catch (error) {
                 console.error(
                   `Error fetching nutrition data for ${food.barcode}:`,
                   error
                 );
-                // Handle errors gracefully (e.g., set a default value or show an error message)
               }
             }
           }
@@ -206,55 +209,55 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
    
     const handleSubmit = async () => {
         if (date) {
-        const formattedDate = format(date, "yyyy-MM-dd");
+            const formattedDate = format(date, "yyyy-MM-dd");
 
-        try {
-            const response = await fetch(
-                `${apiKey}/api/meals/clerk/${userId}/foods/date/${formattedDate}`,
-                    {
-                        method: "POST",
-                        headers: {
-                        "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                        mealType,
-                        food: { grams: parseInt(grams, 10), barcode },
-                        }),
-                    }
-            );
+            try {
+                const response = await fetch(
+                    `${apiKey}/api/meals/clerk/${userId}/foods/date/${formattedDate}`,
+                        {
+                            method: "POST",
+                            headers: {
+                            "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({
+                            mealType,
+                            food: { grams: parseInt(grams, 10), barcode },
+                            }),
+                        }
+                );
 
-            if (response.ok) {
-                const updatedMeals = await response.json();
+                if (response.ok) {
+                    const updatedMeals = await response.json();
 
-                // Update meals state IMMEDIATELY
-                setMeals((prevMeals) => {
-                    const newMeals = { ...prevMeals }; 
-                    if (prevMeals && prevMeals[mealType]) { // Check if the meal type exists before adding
-                        newMeals[mealType] = [...prevMeals[mealType], { grams, barcode }];
-                    } else {
-                        newMeals[mealType] = [{ grams, barcode }];
-                    }
+                    // Update meals state IMMEDIATELY
+                    setMeals((prevMeals) => {
+                        const newMeals = { ...prevMeals }; 
+                        if (prevMeals && prevMeals[mealType]) { // Check if the meal type exists before adding
+                            newMeals[mealType] = [...prevMeals[mealType], { grams, barcode }];
+                        } else {
+                            newMeals[mealType] = [{ grams, barcode }];
+                        }
 
-                    return newMeals;
+                        return newMeals;
+                    });
+
+                    toast({ title: "Food item added successfully!" });
+                    calculateTotals(); // Recalculate totals
+                } else {
+                    throw new Error("Failed to add food item.");
+                }
+            } catch (error) {
+                console.error(error);
+                toast({
+                title: "Error adding food item:",
+                description: error.message,
+                variant: "destructive",
                 });
-
-                toast({ title: "Food item added successfully!" });
-                calculateTotals(); // Recalculate totals
-            } else {
-                throw new Error("Failed to add food item.");
+            } finally {
+                setIsDialogOpen(false);
+                setGrams(''); // Clear the grams input after submitting
+                setBarcode(''); // Clear the barcode input after submitting
             }
-        } catch (error) {
-            console.error(error);
-            toast({
-            title: "Error adding food item:",
-            description: error.message,
-            variant: "destructive",
-            });
-        } finally {
-            setIsDialogOpen(false);
-            setGrams(''); // Clear the grams input after submitting
-            setBarcode(''); // Clear the barcode input after submitting
-        }
         }
     };  
     
@@ -451,30 +454,32 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                                         </TableHeader>
                                         <TableBody>
                                             {meals[mealType] && meals[mealType].length > 0 ? (
-                                            meals[mealType].map((food, index) => (
-                                                <TableRow key={`${mealType}-${index}`}>
-                                                    <TableCell className="font-medium">Example Food name</TableCell>
-                                                    <TableCell>{food.grams}g</TableCell>
-                                                    <TableCell className="text-right">
-                                                        <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => handleDeleteFoodItem(meals._id, index, mealType)}
-                                                        >
-                                                        <Trash2 className="h-4 w-4 text-red-500" />
-                                                        </Button>
+                                                meals[mealType].map((food, index) => (
+                                                    <TableRow key={`${mealType}-${index}`}>
+                                                        <TableCell className="font-medium">
+                                                            {food.productName} ({food.barcode})
+                                                        </TableCell>
+                                                        <TableCell>{food.grams}g</TableCell>
+                                                        <TableCell className="text-right">
+                                                            <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => handleDeleteFoodItem(meals._id, index, mealType)}
+                                                            >
+                                                                <Trash2 className="h-4 w-4 text-red-500" />
+                                                            </Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))
+                                            ) : (
+                                                <TableRow>
+                                                    <TableCell
+                                                        colSpan={3}
+                                                        className="text-muted-foreground text-center"
+                                                    >
+                                                        No {mealType} items added yet.
                                                     </TableCell>
                                                 </TableRow>
-                                            ))
-                                            ) : (
-                                            <TableRow>
-                                                <TableCell
-                                                colSpan={3}
-                                                className="text-muted-foreground text-center"
-                                                >
-                                                No {mealType} items added yet.
-                                                </TableCell>
-                                            </TableRow>
                                             )}
                                         </TableBody>
                                     </Table>
