@@ -249,9 +249,9 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
             } catch (error) {
                 console.error(error);
                 toast({
-                title: "Error adding food item:",
-                description: error.message,
-                variant: "destructive",
+                    title: "Error adding food item:",
+                    description: error.message,
+                    variant: "destructive",
                 });
             } finally {
                 setIsDialogOpen(false);
