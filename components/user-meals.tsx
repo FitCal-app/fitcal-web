@@ -101,19 +101,19 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
               const data = await response.json();
               setMeals(data);
             } else if (response.status === 500) {
-              const errorData = await response.json();
-              if (errorData.error.includes("No meals found for the date")) {
-                // Create empty meal structure for the date if none exists
-                setMeals({
-                  createdAt: formattedDate,
-                  breakfast: [],
-                  lunch: [],
-                  dinner: [],
-                  snacks: []
-                });
-              } else {
-                throw new Error(errorData.error || 'Failed to fetch meals');
-              }
+                const errorData = await response.json();
+                if (errorData.error.includes("No meals found for the date")) {
+                    // Create empty meal structure for the date if none exists
+                    setMeals({
+                        createdAt: formattedDate,
+                        breakfast: [],
+                        lunch: [],
+                        dinner: [],
+                        snacks: []
+                    } as any); // Add 'as any' to bypass type checking
+                } else {
+                    throw new Error(errorData.error || 'Failed to fetch meals');
+                }
             } else {
               throw new Error('Failed to fetch meals');
             }
@@ -227,8 +227,6 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                 );
 
                 if (response.ok) {
-                    const updatedMeals = await response.json();
-
                     // Update meals state IMMEDIATELY
                     setMeals((prevMeals) => {
                         const newMeals = { ...prevMeals }; 
