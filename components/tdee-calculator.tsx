@@ -249,7 +249,7 @@ const TdeeCalculator: React.FC<FormProps> = ({ userId }) => {
                             <CardDescription>Calculate your TDEE</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+                            <form onSubmit={(e: React.FormEvent<HTMLFormElement>) => { e.preventDefault(); handleSubmit(e); }}>
                                 <div className="grid grid-cols-1 xl:grid-cols-1 gap-4">
                                     <div className="w-full">
                                         <Label>Weight (kg)</Label>
