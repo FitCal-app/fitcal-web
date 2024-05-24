@@ -97,27 +97,23 @@ const TdeeCalculator: React.FC<FormProps> = ({ userId }) => {
     }, [userId]);
 
     useEffect(() => {
-        if (formData.weight && formData.height && formData.age) {
-            const weight = parseFloat(formData.weight);
-            const height = parseFloat(formData.height);
-            const age = parseFloat(formData.age);
-            const activityLevel = parseFloat(formData.activityLevel);
-
-            const bmr = formData.gender === 'male'
-                ? 88.362 + 13.397 * weight + 4.799 * height - 5.677 * age
-                : 447.593 + 9.247 * weight + 3.098 * height - 4.330 * age;
-
-            const tdee = bmr * activityLevel;
-            setCalories(Math.round(tdee));
-
-            // Macronutrient calculation based on a balanced distribution
-            const protein = Math.round((tdee * 0.3) / 4); // 30% of total calories from protein, 4 calories per gram of protein
-            const fat = Math.round((tdee * 0.25) / 9); // 25% of total calories from fat, 9 calories per gram of fat
-            const carbs = Math.round((tdee * 0.45) / 4); // 45% of total calories from carbs, 4 calories per gram of carbs
-
-            setMacros({ carbs, protein, fat });
+        const { weight, height, age, gender, activityLevel } = formData;
+        if (weight && height && age) { // Cleaner condition check
+          const w = parseFloat(weight), h = parseFloat(height), a = parseFloat(age), al = parseFloat(activityLevel);
+          const bmr = gender === 'male' ? 88.362 + 13.397 * w + 4.799 * h - 5.677 * a : 447.593 + 9.247 * w + 3.098 * h - 4.330 * a;
+          const tdee = bmr * al;
+    
+          setCalories(Math.round(tdee));
+          setMacros({
+            carbs: Math.round((tdee * 0.45) / 4),
+            protein: Math.round((tdee * 0.3) / 4),
+            fat: Math.round((tdee * 0.25) / 9),
+          });
+        } else { // Reset results if form is incomplete
+          setCalories(null);
+          setMacros(null); 
         }
-    }, [formData]);
+      }, [formData]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -268,7 +264,7 @@ const TdeeCalculator: React.FC<FormProps> = ({ userId }) => {
 
                                     <div className="w-full">
                                         <Label>Gender</Label>
-                                        <Select name="gender" value={formData.gender} onValueChange={(value) => handleInputChange({ target: { name: 'gender', value } })}>
+                                        <Select name="gender" value={formData.gender} onValueChange={(value) => setFormData(prev => ({ ...prev, gender: value }))}>
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Select gender" />
                                             </SelectTrigger>
