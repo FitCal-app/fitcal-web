@@ -130,6 +130,11 @@ const TdeeCalculator: React.FC<FormProps> = ({ userId }) => {
         }));
     };
 
+    const handleSaveClick = () => {
+        const fakeFormEvent = new Event('submit', { bubbles: true }) as unknown as React.FormEvent<HTMLFormElement>; 
+        handleSubmit(fakeFormEvent); 
+    };
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
@@ -318,7 +323,7 @@ const TdeeCalculator: React.FC<FormProps> = ({ userId }) => {
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <Button onClick={handleSubmit}>Save to Profile</Button>
+                                                    <Button onClick={handleSaveClick}>Save to Profile</Button>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
