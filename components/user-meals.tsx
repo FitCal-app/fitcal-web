@@ -50,24 +50,38 @@ const apiKey = process.env.NEXT_PUBLIC_API_URL;
 interface FormProps {
     userId: string;
 }
-
+  
 interface NeedsData {
     calories: number;
     carbohydrates: number;
     proteins: number;
     fats: number;
-}  
-
+}
+  
+interface FoodItem {
+    grams: number;
+    barcode: string;
+    productName?: string;
+    image?: string;
+    calories?: number;
+    carbohydrates?: number;
+    proteins?: number;
+    fats?: number;
+}
+  
+  interface MealsData {
+    [mealType: string]: FoodItem[];
+}
 
 const mealTypesToDisplay = ["breakfast", "snacks", "lunch", "dinner"];
 
 const UserMeals: React.FC<FormProps> = ({ userId }) => {
     const { theme } = useTheme();
 
-    const [date, setDate] = useState<Date>(new Date()); // Initialize with today's date
-    const [meals, setMeals] = useState(null);
+    const [date, setDate] = useState<Date | undefined>(new Date()); // Initialize with today's date
+    const [meals, setMeals] = useState<MealsData | null>(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState<unknown>(null);
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [foodSpecsDialogsOpen, setFoodSpecsDialogsOpen] = useState<{ [key: string]: boolean }>({});
@@ -75,6 +89,7 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
     const [grams, setGrams] = useState("");
     const [barcode, setBarcode] = useState("");
     const { toast } = useToast();
+
 
     const [totalNutrients, setTotalNutrients] = useState({
         calories: 0,
@@ -115,7 +130,21 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
               throw new Error('Failed to fetch meals');
             }
           } catch (error) { 
-            setError(error);
+            if (error instanceof Error) {
+                console.error(error);
+                toast({
+                    title: "Failed to fetch meals:",
+                    description: error.message,
+                    variant: "destructive",
+                });
+            } else {
+                console.error('An unexpected error occurred');
+                toast({
+                    title: "Failed to fetch meals:",
+                    description: 'An unexpected error occurred',
+                    variant: "destructive",
+                });
+            }
           } finally {
             setLoading(false);
           }
@@ -131,8 +160,8 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
         let totalFat = 0;
   
         for (const mealType of mealTypesToDisplay) {
-            if (meals[mealType] && meals[mealType].length > 0) {
-              for (const food of meals[mealType]) {
+            if (meals[mealType as keyof MealsData] && meals[mealType as keyof MealsData].length > 0) {
+              for (const food of meals[mealType as keyof MealsData]) {
                 try {
                     const response = await fetch(
                     `/api/openfoodfacts/v0/product/${food.barcode}.json`
@@ -154,12 +183,12 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                     );
                     totalFat += Math.round((nutriments.fat || 0) * servingSize);
 
-                    food.productName = data.product.product_name; 
-                    food.image = data.product.image_url;
-                    food.calories = nutriments.energy_value * 0.239;
-                    food.carbohydrates = nutriments.carbohydrates;
-                    food.proteins = nutriments.proteins;
-                    food.fats = nutriments.fat;
+                    food.productName = data.product.product_name ?? ''; 
+                    food.image = data.product.image_url ?? '';
+                    food.calories = (nutriments.energy_value ?? 0) * 0.239;
+                    food.carbohydrates = nutriments.carbohydrates ?? 0;
+                    food.proteins = nutriments.proteins ?? 0;
+                    food.fats = nutriments.fat ?? 0;
                 }
               } catch (error) {
                 console.error(
@@ -230,15 +259,15 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                 if (response.ok) {
                     // Update meals state IMMEDIATELY
                     setMeals((prevMeals) => {
-                        const newMeals = { ...prevMeals }; 
-                        if (prevMeals && prevMeals[mealType]) { // Check if the meal type exists before adding
-                            newMeals[mealType] = [...prevMeals[mealType], { grams, barcode }];
+                        if (!prevMeals) return null; // Add this check
+                        const newMeals = { ...prevMeals };
+                        if (prevMeals[mealType as keyof MealsData]) { // Check if the meal type exists before adding
+                          newMeals[mealType as keyof MealsData] = [...prevMeals[mealType as keyof MealsData], { grams: parseInt(grams, 10), barcode }];
                         } else {
-                            newMeals[mealType] = [{ grams, barcode }];
+                          newMeals[mealType as keyof MealsData] = [{ grams: parseInt(grams, 10), barcode }];
                         }
-
                         return newMeals;
-                    });
+                      });
 
                     fetchMeals();
                     toast({ title: "Food added successfully!" });
@@ -247,12 +276,21 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                     throw new Error("Failed to add food item.");
                 }
             } catch (error) {
-                console.error(error);
-                toast({
-                    title: "Error adding food item:",
-                    description: error.message,
-                    variant: "destructive",
-                });
+                if (error instanceof Error) {
+                    console.error(error);
+                    toast({
+                        title: "Error adding food item:",
+                        description: error.message,
+                        variant: "destructive",
+                    });
+                } else {
+                    console.error('An unexpected error occurred');
+                    toast({
+                        title: "Error adding food item:",
+                        description: 'An unexpected error occurred',
+                        variant: "destructive",
+                    });
+                }
             } finally {
                 setIsDialogOpen(false);
                 setGrams(''); // Clear the grams input after submitting
@@ -262,9 +300,11 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
     };  
     
     const handleDeleteFoodItem = async (mealId: string, foodIndex: string, mealType: string) => {
-        try {
-            const formattedDate = format(date, "yyyy-MM-dd");
+        if (!date || !meals) return;
 
+        const formattedDate = format(date, "yyyy-MM-dd");
+
+        try {
             const endpoint = formattedDate
                 ? `${apiKey}/api/meals/clerk/${userId}/foods/date/${formattedDate}/${mealId}/${mealType}/${foodIndex}`
                 : `${apiKey}/api/meals/clerk/${userId}/foods/${mealId}/${mealType}/${foodIndex}`;
@@ -293,17 +333,34 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
             }
           }
         } catch (error) {
-          console.error(error);
-          toast({
-            title: "Error deleting food item:",
-            description: error.message,
-            variant: "destructive",
-          });
+            if (error instanceof Error) {
+                console.error(error);
+                toast({
+                    title: "Error deleting food item:",
+                    description: error.message,
+                    variant: "destructive",
+                });
+            } else {
+                console.error('An unexpected error occurred');
+                toast({
+                    title: "Error deleting food item:",
+                    description: 'An unexpected error occurred',
+                    variant: "destructive",
+                });
+            }
         }
     };
     
 
     const isFormFilled = mealType !== '' && grams !== '' && barcode !== '';
+
+    const getErrorMessage = (error: unknown): string => {
+        if (error instanceof Error) {
+            return error.message;
+        }
+        return 'An unexpected error occurred';
+    };
+
 
     return (
         <>
@@ -432,7 +489,7 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                 {loading ? (
                     <p>Loading meals...</p>
                 ) : error ? (
-                    <p className="text-destructive">Error: {error.message}</p>
+                    <p className="text-destructive">Error: {getErrorMessage(error)}</p>
                 ) : meals ? (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -457,7 +514,7 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                                         </TableHeader>
                                         <TableBody>
                                             {meals[mealType] && meals[mealType].length > 0 ? (
-                                                meals[mealType].map((food, index) => (
+                                                meals[mealType].map((food: FoodItem, index: number) => (
                                                     <TableRow key={`${mealType}-${index}`}>
                                                         <TableCell className="font-medium">
                                                             {food.productName}
@@ -495,19 +552,19 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                                                                                 <div className="grid grid-cols-2 gap-2"> {/* Grid for nutriments for your serving */}
                                                                                     <div>
                                                                                         <p className="text-sm font-medium">Calories:</p>
-                                                                                        <p className="text-lg">{Math.round(food.calories * (food.grams / 100))} kcal</p>
+                                                                                        <p className="text-lg">{Math.round((food.calories ?? 0) * (food.grams / 100))} kcal</p>
                                                                                     </div>
                                                                                     <div>
                                                                                         <p className="text-sm font-medium">Carbs:</p>
-                                                                                        <p className="text-lg">{Math.round(food.carbohydrates * (food.grams / 100))} g</p>
+                                                                                        <p className="text-lg">{Math.round((food.carbohydrates ?? 0) * (food.grams / 100))} g</p>
                                                                                     </div>
                                                                                     <div>
                                                                                         <p className="text-sm font-medium">Protein:</p>
-                                                                                        <p className="text-lg">{Math.round(food.proteins * (food.grams / 100))} g</p>
+                                                                                        <p className="text-lg">{Math.round((food.proteins ?? 0) * (food.grams / 100))} g</p>
                                                                                     </div>
                                                                                     <div>
                                                                                         <p className="text-sm font-medium">Fat:</p>
-                                                                                        <p className="text-lg">{Math.round(food.fats * (food.grams / 100))} g</p>
+                                                                                        <p className="text-lg">{Math.round((food.fats ?? 0) * (food.grams / 100))} g</p>
                                                                                     </div>
                                                                                 </div>
 
@@ -515,19 +572,19 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                                                                                 <div className="grid grid-cols-2 gap-2"> {/* Grid for nutriments for 100grams */}
                                                                                     <div>
                                                                                         <p className="text-sm font-medium">Calories:</p>
-                                                                                        <p className="text-lg">{Math.round(food.calories)} kcal</p>
+                                                                                        <p className="text-lg">{Math.round(food.calories ?? 0)} kcal</p>
                                                                                     </div>
                                                                                     <div>
                                                                                         <p className="text-sm font-medium">Carbs:</p>
-                                                                                        <p className="text-lg">{Math.round(food.carbohydrates)} g</p>
+                                                                                        <p className="text-lg">{Math.round(food.carbohydrates ?? 0)} g</p>
                                                                                     </div>
                                                                                     <div>
                                                                                         <p className="text-sm font-medium">Protein:</p>
-                                                                                        <p className="text-lg">{Math.round(food.proteins)} g</p>
+                                                                                        <p className="text-lg">{Math.round(food.proteins ?? 0)} g</p>
                                                                                     </div>
                                                                                     <div>
                                                                                         <p className="text-sm font-medium">Fat:</p>
-                                                                                        <p className="text-lg">{Math.round(food.fats)} g</p>
+                                                                                        <p className="text-lg">{Math.round(food.fats ?? 0)} g</p>
                                                                                     </div>
                                                                                 </div>
                                                                             </div>
@@ -539,10 +596,11 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                                                             </AlertDialog>
 
 
-                                                             <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            onClick={() => handleDeleteFoodItem(meals?._id, index, mealType)}>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() => handleDeleteFoodItem(meals?._id.toString(), index.toString(), mealType)}
+                                                            >
                                                                 <Trash2 className="h-4 w-4 text-red-500" />
                                                             </Button>
                                                         </TableCell>
