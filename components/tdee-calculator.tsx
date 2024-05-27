@@ -34,6 +34,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"  
+import { useToast } from "@/components/ui/use-toast";
 
 
 const apiKey = process.env.NEXT_PUBLIC_API_URL;
@@ -61,19 +62,8 @@ const TdeeCalculator: React.FC<FormProps> = ({ userId }) => {
     const [calories, setCalories] = useState<number | null>(null);
     const [macros, setMacros] = useState<{ carbs: number, protein: number, fat: number } | null>(null);
     const [isDataSent, setIsDataSent] = useState<boolean>(false);
-    const [errorMessage, setErrorMessage] = useState<string>('');
     const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
-
-    useEffect(() => {
-        if (errorMessage || isDataSent) {
-            const timer = setTimeout(() => {
-                setErrorMessage('');
-                setIsDataSent(false);
-            }, 3000);
-
-            return () => clearTimeout(timer);
-        }
-    }, [errorMessage, isDataSent]);
+    const { toast } = useToast();
 
     // Fetch user needs on component mount
     useEffect(() => {
@@ -155,9 +145,9 @@ const TdeeCalculator: React.FC<FormProps> = ({ userId }) => {
             });
 
             if (response.ok) {
-                console.log('Data sent successfully');
+                console.log('Data saved successfully');
                 setIsDataSent(true);
-                setErrorMessage('');
+                toast({ title: "Data saved successfully!" })
                 setIsDialogOpen(false);  // Close the dialog on successful submission
 
                 // Fetch user data after updating needs
@@ -184,31 +174,25 @@ const TdeeCalculator: React.FC<FormProps> = ({ userId }) => {
 
             } else {
                 const responseBody = await response.json();
-                setErrorMessage('Failed to send data. Status: ' + response.status + '. Response Body: ' + JSON.stringify(responseBody));
+                toast({
+                    variant: "destructive",
+                    title: "Uh oh! Something went wrong.",
+                    description: 'Failed to send data. Status: ' + response.status + '. Response Body: ' + JSON.stringify(responseBody),
+                })
             }
         } catch (error) {
-            setErrorMessage('Error sending data: ' + error);
+            toast({
+                variant: "destructive",
+                title: "Uh oh! Something went wrong.",
+                description: 'Error sending data: ' + error,
+            })
         }
     };
 
     const isFormFilled = Object.values(formData).every(value => value !== '');
 
     return (
-        <>
-            {errorMessage && 
-                <Alert variant="destructive" className='mb-3'>
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>{errorMessage}</AlertDescription>
-                </Alert>
-            }
-            {isDataSent && 
-                <Alert className='mb-3'>
-                    <Check className="h-4 w-4" />
-                    <AlertTitle className='text-green-500'>Data sent successfully!</AlertTitle>
-                </Alert>
-            }
-            
+        <>       
             <div className='grid grid-cols-2 grid-rows-1 gap-5'>
                 <div className="col-span-1">
                     {needs ? (

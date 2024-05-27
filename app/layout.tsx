@@ -5,6 +5,7 @@ import { ClerkProvider } from '@clerk/nextjs'
 import Header from '@/components/header'
 import Footer from '@/components/footer'
 import { ThemeProvider } from '@/components/theme-provider'
+import { Toaster } from "@/components/ui/toaster"
 
 import './globals.css'
 
@@ -36,6 +37,7 @@ export default function RootLayout({
           >
             <Header />
             <main className='grow'>{children}</main>
+            <Toaster />
             <Footer />
           </ThemeProvider>
         </body>

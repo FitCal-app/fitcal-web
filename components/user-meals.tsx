@@ -111,7 +111,7 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
             } else {
               throw new Error('Failed to fetch meals');
             }
-          } catch (error) {
+          } catch (error) { 
             setError(error);
           } finally {
             setLoading(false);
@@ -131,32 +131,32 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
             if (meals[mealType] && meals[mealType].length > 0) {
               for (const food of meals[mealType]) {
                 try {
-                const response = await fetch(
-                  `/api/openfoodfacts/v0/product/${food.barcode}.json`
-                );
-                const data = await response.json();
-  
-                if (data.status === 1 && data.product?.nutriments) {
-                  const nutriments = data.product.nutriments;
-                  const servingSize = food.grams / 100;
-  
-                  totalCalories += Math.round(
-                    ((nutriments.energy_value * 0.239) * servingSize)
-                  );
-                  totalCarbs += Math.round(
-                    (nutriments.carbohydrates || 0) * servingSize
-                  );
-                  totalProtein += Math.round(
-                    (nutriments.proteins || 0) * servingSize
-                  );
-                  totalFat += Math.round((nutriments.fat || 0) * servingSize);
+                    const response = await fetch(
+                    `/api/openfoodfacts/v0/product/${food.barcode}.json`
+                    );
+                    const data = await response.json();
+    
+                    if (data.status === 1 && data.product?.nutriments) {
+                    const nutriments = data.product.nutriments;
+                    const servingSize = food.grams / 100;
+    
+                    totalCalories += Math.round(
+                        ((nutriments.energy_value * 0.239) * servingSize)
+                    );
+                    totalCarbs += Math.round(
+                        (nutriments.carbohydrates || 0) * servingSize
+                    );
+                    totalProtein += Math.round(
+                        (nutriments.proteins || 0) * servingSize
+                    );
+                    totalFat += Math.round((nutriments.fat || 0) * servingSize);
 
-                  food.productName = data.product.product_name; 
-                  food.image = data.product.image_url;
-                  food.calories = nutriments.energy_value * 0.239;
-                  food.carbohydrates = nutriments.carbohydrates;
-                  food.proteins = nutriments.proteins;
-                  food.fats = nutriments.fat;
+                    food.productName = data.product.product_name; 
+                    food.image = data.product.image_url;
+                    food.calories = nutriments.energy_value * 0.239;
+                    food.carbohydrates = nutriments.carbohydrates;
+                    food.proteins = nutriments.proteins;
+                    food.fats = nutriments.fat;
                 }
               } catch (error) {
                 console.error(
@@ -238,7 +238,7 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                     });
 
                     fetchMeals();
-                    toast({ title: "Food item added successfully!" });
+                    toast({ title: "Food added successfully!" });
                     calculateTotals(); // Recalculate totals
                 } else {
                     throw new Error("Failed to add food item.");
@@ -258,7 +258,7 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
         }
     };  
     
-    const handleDeleteFoodItem = async (mealId, foodIndex, mealType) => {
+    const handleDeleteFoodItem = async (mealId: string, foodIndex: string, mealType: string) => {
         try {
             const formattedDate = format(date, "yyyy-MM-dd");
 
@@ -275,7 +275,7 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
     
           if (response.ok) {
             fetchMeals(); // Refresh meals after deleting the item
-            toast({ title: "Food item deleted successfully!" });
+            toast({ title: "Food deleted successfully!" });
           } else {
             const errorData = await response.json();
             console.error("Error response:", errorData); // Log the error data from the API
@@ -359,7 +359,11 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                             <Calendar
                             mode="single"
                             selected={date}
-                            onSelect={setDate}
+                            onSelect={(selectedDate: Date | undefined) => {
+                                if (selectedDate) {
+                                  setDate(selectedDate);
+                                }
+                              }}
                             initialFocus
                             />
                         </PopoverContent>
@@ -377,7 +381,6 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                                     <div>
                                         <Label htmlFor="mealType">Meal Type</Label>
                                         <Select
-                                            id="mealType"
                                             value={mealType}
                                             onValueChange={setMealType}
                                         >
@@ -536,7 +539,7 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                                                              <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            onClick={() => handleDeleteFoodItem(meals._id, index, mealType)}>
+                                                            onClick={() => handleDeleteFoodItem(meals?._id, index, mealType)}>
                                                                 <Trash2 className="h-4 w-4 text-red-500" />
                                                             </Button>
                                                         </TableCell>

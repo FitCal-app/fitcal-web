@@ -1,3 +1,5 @@
+'use client'; 
+
 import Link from 'next/link'
 import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
 
@@ -7,14 +9,17 @@ import Image from 'next/image'
 
 import logoLight from '../public/logo-light.svg';
 import logoDark from '../public/logo-dark.svg'; 
+import { useTheme } from 'next-themes';
 
 export default function Header() {
+  const { theme } = useTheme();
+  
   return (
-    <header className='py-4'>
-      <nav className='container flex items-center justify-between'>
-        <Link href='/'>
+    <header className="py-4">
+      <nav className="container flex items-center justify-between">
+        <Link href="/">
           <Image
-            src={logoDark}
+            src={theme === 'light' ? logoLight : logoDark}
             width={50}
             height={50}
             alt="Picture of the author"
