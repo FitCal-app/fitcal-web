@@ -1,10 +1,9 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from 'react';
-
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
-import { Calendar as CalendarIcon } from "lucide-react"
+import { Calendar as CalendarIcon, Trash2, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import {
@@ -25,18 +24,14 @@ import {
     Card,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
-
-
 import {
     AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
-    AlertDialogDescription,
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
@@ -47,8 +42,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { Progress } from "@/components/ui/progress";
-
-import { Trash2 } from 'lucide-react' 
 
 
 const apiKey = process.env.NEXT_PUBLIC_API_URL;
@@ -74,6 +67,8 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
     const [error, setError] = useState(null);
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [foodDialogsOpen, setFoodDialogsOpen] = useState<{ [key: string]: boolean }>({});
+    const [foodSpecsDialogsOpen, setFoodSpecsDialogsOpen] = useState<{ [key: string]: boolean }>({});
     const [mealType, setMealType] = useState("breakfast");
     const [grams, setGrams] = useState("");
     const [barcode, setBarcode] = useState("");
@@ -89,7 +84,7 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
     const [totalTargetNutrients, setTotalTargetNutrients] = useState<NeedsData | null>(null);
 
 
-    const fetchMeals = useCallback(async () => {
+     const fetchMeals = useCallback(async () => {
         if (date) {
           setLoading(true);
           setError(null);
@@ -138,7 +133,7 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
               for (const food of meals[mealType]) {
                 try {
                 const response = await fetch(
-                  `https://world.openfoodfacts.org/api/v0/product/${food.barcode}.json`
+                  `/api/openfoodfacts/v0/product/${food.barcode}.json`
                 );
                 const data = await response.json();
   
@@ -159,6 +154,10 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
 
                   food.productName = data.product.product_name; 
                   food.image = data.product.image_url;
+                  food.calories = nutriments.energy_value * 0.239;
+                  food.carbohydrates = nutriments.carbohydrates;
+                  food.proteins = nutriments.proteins;
+                  food.fats = nutriments.fat;
                 }
               } catch (error) {
                 console.error(
@@ -239,6 +238,7 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                         return newMeals;
                     });
 
+                    fetchMeals();
                     toast({ title: "Food item added successfully!" });
                     calculateTotals(); // Recalculate totals
                 } else {
@@ -445,9 +445,9 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                                     <Table className="w-full">
                                         <TableHeader className="text-xs uppercase text-muted-foreground font-bold">
                                         <TableRow>
-                                            <TableHead className="font-normal">Name</TableHead>
-                                            <TableHead className="font-normal">Grams</TableHead>
-                                            <TableHead className="font-normal text-right"></TableHead> {/* Added Delete Header */}
+                                            <TableHead className="font-normal w-1/2">Name</TableHead>
+                                            <TableHead className="font-normal w-1/4">Grams</TableHead>
+                                            <TableHead className="font-normal text-right w-1/4"></TableHead>
                                         </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -455,17 +455,90 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                                                 meals[mealType].map((food, index) => (
                                                     <TableRow key={`${mealType}-${index}`}>
                                                         <TableCell className="font-medium">
-                                                            {food.productName} ({food.barcode})
+                                                            {food.productName}
                                                         </TableCell>
+
                                                         <TableCell>{food.grams}g</TableCell>
+        
                                                         <TableCell className="text-right">
-                                                            <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            onClick={() => handleDeleteFoodItem(meals._id, index, mealType)}
+                                                            <AlertDialog 
+                                                                open={foodSpecsDialogsOpen[`${mealType}-${index}`] || false}
+                                                                onOpenChange={(isOpen) =>
+                                                                    setFoodSpecsDialogsOpen((prevState) => ({
+                                                                        ...prevState,
+                                                                        [`${mealType}-${index}`]: isOpen,
+                                                                    }))
+                                                                }
                                                             >
-                                                                <Trash2 className="h-4 w-4 text-red-500" />
-                                                            </Button>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <Button variant="ghost"><Eye className="h-4 w-4" /></Button>
+                                                                </AlertDialogTrigger>
+                                                                <AlertDialogContent>
+                                                                    <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Food Specifics</AlertDialogTitle>
+                                                                    </AlertDialogHeader>
+                                                                    <div className="p-4 flex">
+                                                                        <img 
+                                                                            src={food.image} 
+                                                                            alt={food.productName} 
+                                                                            className="w-48 object-cover rounded-lg mr-6 shadow-md"  // Enhanced image styling
+                                                                        />
+                                                                        <div className="flex-1">
+                                                                            <h3 className="text-lg font-semibold mb-2">{food.productName}</h3>
+                                                                            <p className="text-gray-600 mb-2">Barcode: {food.barcode}</p>
+
+                                                                                <div className="grid grid-cols-2 gap-2"> {/* Grid for nutriments */}
+                                                                                    <div>
+                                                                                        <p className="text-sm font-medium">Calories:</p>
+                                                                                        <p className="text-lg">{Math.round(food.calories)} kcal</p>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <p className="text-sm font-medium">Carbs:</p>
+                                                                                        <p className="text-lg">{Math.round(food.carbohydrates)} g</p>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <p className="text-sm font-medium">Protein:</p>
+                                                                                        <p className="text-lg">{Math.round(food.proteins)} g</p>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <p className="text-sm font-medium">Fat:</p>
+                                                                                        <p className="text-lg">{Math.round(food.fats)} g</p>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <p className="text-gray-500 text-sm mt-2">
+                                                                                    * All nutrient values are per 100g serving.
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                    <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Close</AlertDialogCancel>
+                                                                    </AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
+
+
+                                                            <AlertDialog
+                                                                open={foodDialogsOpen[`${mealType}-${index}`] || false}
+                                                                onOpenChange={(isOpen) =>
+                                                                    setFoodDialogsOpen((prevState) => ({
+                                                                        ...prevState,
+                                                                        [`${mealType}-${index}`]: isOpen,
+                                                                    }))
+                                                                }
+                                                            >
+                                                                <AlertDialogTrigger asChild>
+                                                                    <Button variant="ghost"><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                                                                </AlertDialogTrigger>
+                                                                <AlertDialogContent>
+                                                                    <AlertDialogHeader>
+                                                                        <AlertDialogTitle>Are you sure you want to delete this item?</AlertDialogTitle>
+                                                                    </AlertDialogHeader>
+                                                                    <AlertDialogFooter>
+                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                        <Button onClick={() => handleDeleteFoodItem(meals._id, index, mealType)}>Delete</Button>
+                                                                    </AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
                                                         </TableCell>
                                                     </TableRow>
                                                 ))
