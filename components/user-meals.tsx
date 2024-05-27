@@ -458,7 +458,7 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                                                         </TableCell>
 
                                                         <TableCell>{food.grams}g</TableCell>
-        
+
                                                         <TableCell className="text-right">
                                                             <AlertDialog 
                                                                 open={foodSpecsDialogsOpen[`${mealType}-${index}`] || false}
