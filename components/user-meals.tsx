@@ -67,7 +67,6 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
     const [error, setError] = useState(null);
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [foodDialogsOpen, setFoodDialogsOpen] = useState<{ [key: string]: boolean }>({});
     const [foodSpecsDialogsOpen, setFoodSpecsDialogsOpen] = useState<{ [key: string]: boolean }>({});
     const [mealType, setMealType] = useState("breakfast");
     const [grams, setGrams] = useState("");
@@ -486,8 +485,28 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                                                                         <div className="flex-1">
                                                                             <h3 className="text-lg font-semibold mb-2">{food.productName}</h3>
                                                                             <p className="text-gray-600 mb-2">Barcode: {food.barcode}</p>
+                                                                                <h4 className="text-md font-semibold mb-1">Nutrients for Your Serving ({food.grams}g):</h4> {/* Title for Your Serving */}
+                                                                                <div className="grid grid-cols-2 gap-2"> {/* Grid for nutriments for your serving */}
+                                                                                    <div>
+                                                                                        <p className="text-sm font-medium">Calories:</p>
+                                                                                        <p className="text-lg">{Math.round(food.calories * (food.grams / 100))} kcal</p>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <p className="text-sm font-medium">Carbs:</p>
+                                                                                        <p className="text-lg">{Math.round(food.carbohydrates * (food.grams / 100))} g</p>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <p className="text-sm font-medium">Protein:</p>
+                                                                                        <p className="text-lg">{Math.round(food.proteins * (food.grams / 100))} g</p>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <p className="text-sm font-medium">Fat:</p>
+                                                                                        <p className="text-lg">{Math.round(food.fats * (food.grams / 100))} g</p>
+                                                                                    </div>
+                                                                                </div>
 
-                                                                                <div className="grid grid-cols-2 gap-2"> {/* Grid for nutriments */}
+                                                                                <h4 className="text-md font-semibold mt-3 mb-1">Nutrients per 100g:</h4> {/* Title for 100g */}
+                                                                                <div className="grid grid-cols-2 gap-2"> {/* Grid for nutriments for 100grams */}
                                                                                     <div>
                                                                                         <p className="text-sm font-medium">Calories:</p>
                                                                                         <p className="text-lg">{Math.round(food.calories)} kcal</p>
@@ -505,9 +524,6 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                                                                                         <p className="text-lg">{Math.round(food.fats)} g</p>
                                                                                     </div>
                                                                                 </div>
-                                                                                <p className="text-gray-500 text-sm mt-2">
-                                                                                    * All nutrient values are per 100g serving.
-                                                                                </p>
                                                                             </div>
                                                                         </div>
                                                                     <AlertDialogFooter>
@@ -517,28 +533,12 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                                                             </AlertDialog>
 
 
-                                                            <AlertDialog
-                                                                open={foodDialogsOpen[`${mealType}-${index}`] || false}
-                                                                onOpenChange={(isOpen) =>
-                                                                    setFoodDialogsOpen((prevState) => ({
-                                                                        ...prevState,
-                                                                        [`${mealType}-${index}`]: isOpen,
-                                                                    }))
-                                                                }
-                                                            >
-                                                                <AlertDialogTrigger asChild>
-                                                                    <Button variant="ghost"><Trash2 className="h-4 w-4 text-red-500" /></Button>
-                                                                </AlertDialogTrigger>
-                                                                <AlertDialogContent>
-                                                                    <AlertDialogHeader>
-                                                                        <AlertDialogTitle>Are you sure you want to delete this item?</AlertDialogTitle>
-                                                                    </AlertDialogHeader>
-                                                                    <AlertDialogFooter>
-                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                        <Button onClick={() => handleDeleteFoodItem(meals._id, index, mealType)}>Delete</Button>
-                                                                    </AlertDialogFooter>
-                                                                </AlertDialogContent>
-                                                            </AlertDialog>
+                                                             <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => handleDeleteFoodItem(meals._id, index, mealType)}>
+                                                                <Trash2 className="h-4 w-4 text-red-500" />
+                                                            </Button>
                                                         </TableCell>
                                                     </TableRow>
                                                 ))
