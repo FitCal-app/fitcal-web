@@ -1,8 +1,9 @@
-"use client"
+'use client'
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
+import { useTheme } from 'next-themes';
 import { Calendar as CalendarIcon, Trash2, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -61,6 +62,8 @@ interface NeedsData {
 const mealTypesToDisplay = ["breakfast", "snacks", "lunch", "dinner"];
 
 const UserMeals: React.FC<FormProps> = ({ userId }) => {
+    const { theme } = useTheme();
+
     const [date, setDate] = useState<Date>(new Date()); // Initialize with today's date
     const [meals, setMeals] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -324,7 +327,7 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                                     value={(value / target) * 100}
                                     className={cn(
                                         value > target ? "bg-red-500 dark:bg-red-500" : "bg-white dark:bg-gray-700",
-                                        "[&>*]:bg-white" // Default white indicator
+                                        `[&>*]:bg-${theme === "light" ? "gray7500" : ""}`
                                     )}
                                 />
                                 <p className="text-sm text-muted-foreground mt-2">{value} / {target} {unit}</p>

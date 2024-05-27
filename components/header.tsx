@@ -7,9 +7,11 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 
+import { useTheme } from 'next-themes';
+
 import logoLight from '../public/logo-light.svg';
 import logoDark from '../public/logo-dark.svg'; 
-import { useTheme } from 'next-themes';
+
 
 export default function Header() {
   const { theme } = useTheme();
