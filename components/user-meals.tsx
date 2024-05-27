@@ -164,7 +164,7 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
               for (const food of meals[mealType as keyof MealsData]) {
                 try {
                     const response = await fetch(
-                    `https://world.openfoodfacts.org/api/openfoodfacts/v0/product/${food.barcode}.json`
+                    `https://world.openfoodfacts.org/api/v0/product/${food.barcode}.json`
                     );
                     const data = await response.json();
     
