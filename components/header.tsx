@@ -30,7 +30,7 @@ export default function Header() {
         
         <ul className='flex gap-10 text-sm font-medium'>
           <li>
-            <Link href='/protected/home'>Personal Homepage</Link>
+            <Link href='/protected/home'>Personala Homepage</Link>
           </li>
           <li>
             <Link href='/protected/tdee-calculator'>TDEE Calculator</Link>
