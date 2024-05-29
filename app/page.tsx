@@ -39,7 +39,7 @@ export default function Home() {
               Track your meals, calculate your TDEE, and reach your full
               potential.
             </p>
-            <a href='/protected/home'><Button className={"mt-8"}>Get Started</Button></a>
+            <a href='/protected/home'><Button className={"mt-8"}>Gaet Started</Button></a>
           </div>
         </div>
 
