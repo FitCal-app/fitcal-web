@@ -7,6 +7,8 @@ import Footer from '@/components/footer'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from "@/components/ui/toaster"
 
+import { Analytics } from "@vercel/analytics/react"
+
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -36,7 +38,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <Header />
-            <main className='grow'>{children}</main>
+            <main className='grow'>{children}<Analytics/></main>
             <Toaster />
             <Footer />
           </ThemeProvider>
