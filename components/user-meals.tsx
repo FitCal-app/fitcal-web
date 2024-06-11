@@ -15,7 +15,6 @@ import {
 import {
     Table,
     TableBody,
-    TableCaption,
     TableCell,
     TableHead,
     TableHeader,
@@ -305,13 +304,7 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
         const formattedDate = format(date, "yyyy-MM-dd");
 
         try {
-            const endpoint = formattedDate
-                ? `${apiKey}/api/meals/clerk/${userId}/foods/date/${formattedDate}/${mealId}/${mealType}/${foodIndex}`
-                : `${apiKey}/api/meals/clerk/${userId}/foods/${mealId}/${mealType}/${foodIndex}`;
-      
-            console.log("Delete Endpoint:", endpoint); // Log the endpoint for debugging
-        
-            const response = await fetch(endpoint, {
+            const response = await fetch(`${apiKey}/api/meals/clerk/${userId}/foods/date/${formattedDate}/${mealId}/${mealType}/${foodIndex}`, {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" },
             });
