@@ -239,6 +239,17 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
     const handleSubmit = async () => {
         if (date) {
             const formattedDate = format(date, "yyyy-MM-dd");
+            const parsedGrams = parseInt(grams, 10); 
+
+            // Check if grams are valid
+            if (parsedGrams <= 0) {
+                toast({
+                    title: "Failed to add food:",
+                    description: "You cannot add a food with grams less than or equal to zero",
+                    variant: "destructive",
+                });
+                return; // Stop submission if grams are invalid
+            }
 
             try {
                 const response = await fetch(
@@ -250,7 +261,7 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                             },
                             body: JSON.stringify({
                             mealType,
-                            food: { grams: parseInt(grams, 10), barcode },
+                            food: { grams: parsedGrams, barcode },
                             }),
                         }
                 );
