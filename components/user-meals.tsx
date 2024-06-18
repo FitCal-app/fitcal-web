@@ -248,7 +248,7 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                     description: "You cannot add a food with grams less than or equal to zero",
                     variant: "destructive",
                 });
-                return; // Stop submission if grams are invalid
+                setGrams('');
             }
 
             try {
