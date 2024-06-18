@@ -248,63 +248,84 @@ const UserMeals: React.FC<FormProps> = ({ userId }) => {
                     description: "You cannot add a food with grams less than or equal to zero",
                     variant: "destructive",
                 });
-                setGrams('');
-            } else {
-                try {
-                    const response = await fetch(
-                        `${apiKey}/api/meals/clerk/${userId}/foods/date/${formattedDate}`,
-                            {
-                                method: "POST",
-                                headers: {
-                                "Content-Type": "application/json",
-                                },
-                                body: JSON.stringify({
-                                mealType,
-                                food: { grams: parsedGrams, barcode },
-                                }),
-                            }
-                    );
+                setIsDialogOpen(false);
+                setGrams(''); 
+                setBarcode(''); 
+                return; // Stop submission if grams are invalid
+            }
+
+            try {
+                // Fetch food data from your API route
+                const foodResponse = await fetch(
+                    `${apiKey}/api/openfood/${barcode}`  
+                );
+                
+                const foodData = await foodResponse.json(); // Parse the response
     
-                    if (response.ok) {
-                        // Update meals state IMMEDIATELY
-                        setMeals((prevMeals) => {
-                            if (!prevMeals) return null; // Add this check
-                            const newMeals = { ...prevMeals };
-                            if (prevMeals[mealType as keyof MealsData]) { // Check if the meal type exists before adding
-                              newMeals[mealType as keyof MealsData] = [...prevMeals[mealType as keyof MealsData], { grams: parseInt(grams, 10), barcode }];
-                            } else {
-                              newMeals[mealType as keyof MealsData] = [{ grams: parseInt(grams, 10), barcode }];
-                            }
-                            return newMeals;
-                          });
-    
-                        fetchMeals();
-                        toast({ title: "Food added successfully!" });
-                        calculateTotals(); // Recalculate totals
-                    } else {
-                        throw new Error("Failed to add food item.");
-                    }
-                } catch (error) {
-                    if (error instanceof Error) {
-                        console.error(error);
-                        toast({
-                            title: "Error adding food item:",
-                            description: error.message,
-                            variant: "destructive",
-                        });
-                    } else {
-                        console.error('An unexpected error occurred');
-                        toast({
-                            title: "Error adding food item:",
-                            description: 'An unexpected error occurred',
-                            variant: "destructive",
-                        });
-                    }
-                } finally {
-                    setIsDialogOpen(false);
-                    setGrams(''); // Clear the grams input after submitting
-                    setBarcode(''); // Clear the barcode input after submitting
+                // Check for invalid barcode response
+                if (foodData.status === "product not found") { 
+                    toast({
+                        title: "Failed to add food:",
+                        description: "The barcode is invalid",
+                        variant: "destructive",
+                    });
+                    return; // Stop submission
                 }
+
+
+                const response = await fetch(
+                    `${apiKey}/api/meals/clerk/${userId}/foods/date/${formattedDate}`,
+                        {
+                            method: "POST",
+                            headers: {
+                            "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({
+                            mealType,
+                            food: { grams: parsedGrams, barcode },
+                            }),
+                        }
+                );
+
+                if (response.ok) {
+                    // Update meals state IMMEDIATELY
+                    setMeals((prevMeals) => {
+                        if (!prevMeals) return null; // Add this check
+                        const newMeals = { ...prevMeals };
+                        if (prevMeals[mealType as keyof MealsData]) { // Check if the meal type exists before adding
+                            newMeals[mealType as keyof MealsData] = [...prevMeals[mealType as keyof MealsData], { grams: parseInt(grams, 10), barcode }];
+                        } else {
+                            newMeals[mealType as keyof MealsData] = [{ grams: parseInt(grams, 10), barcode }];
+                        }
+                        return newMeals;
+                        });
+
+                    fetchMeals();
+                    toast({ title: "Food added successfully!" });
+                    calculateTotals(); // Recalculate totals
+                } else {
+                    throw new Error("Failed to add food item.");
+                }
+            } catch (error) {
+                if (error instanceof Error) {
+                    console.error(error);
+                    toast({
+                        title: "Error adding food item:",
+                        description: error.message,
+                        variant: "destructive",
+                    });
+                } else {
+                    console.error('An unexpected error occurred');
+                    toast({
+                        title: "Error adding food item:",
+                        description: 'An unexpected error occurred',
+                        variant: "destructive",
+                    });
+                }
+            } finally {
+                setIsDialogOpen(false);
+                setGrams(''); 
+                setBarcode(''); 
             }
         }
     };  
